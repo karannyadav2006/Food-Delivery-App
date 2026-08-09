@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
-
+import { GoogleAuthProvider, signInWithPopup, } from "firebase/auth";
+import { auth,app } from "../../GoogleAuth";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { ClipLoader } from "react-spinners";
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("user");
@@ -9,13 +13,15 @@ const Signup = () => {
   const [password,setpassword]=useState("")
   const [mobile,setmobile]=useState("")
   const [email,setemail]=useState("")
-
+  const[err,setErr]=useState("")
+  const[loading,setLoading]=useState(false)
+const navigate=useNavigate()
  
 
 const handleform = async (e) => {
 console.log("Form Submitted");
     e.preventDefault();
-
+setLoading(true)
     const userData = {
       
         fullName:name,
@@ -25,7 +31,7 @@ console.log("Form Submitted");
         role
     }
 console.log(userData);
-
+setErr("")
     try{
 
         const res = await axios.post(
@@ -36,18 +42,61 @@ console.log(userData);
     }
         );
 
-        console.log(res.data);
+        console.log(res);
 
     }catch(err){
 
-        console.log(err.response.data);
+         setErr(
+      err.response?.data?.msg || "Something went wrong"
+    );
 
     }
+   { setLoading(false)}
 
+}
+const signupwithgoogle=async()=>{
+  
+  setErr("")
+  setLoading(true)
+try{
+if(!mobile){
+    return alert('Mobile no. is required');
+  }
+    const provider=new  GoogleAuthProvider();
+  const result = await signInWithPopup(auth,provider);
+  
+  console.log(result);
+
+   const res = await axios.post(
+            "http://localhost:3000/api/auth/google-auth",{
+fullname:result.user.displayName,
+email:result.user.email,
+role,
+mobile,
+            },
+            
+             {
+        withCredentials: true,
+        
+        
+    }
+        );
+
+        console.log(res);
+
+  
+  }
+  catch(err){
+   
+      setErr(
+      err.response?.data?.msg || "Something went wrong"
+    );
+  }
+  {setLoading(false)}
 }
 
   return (
-    <div className="min-h-screen  bg-[#FCF8F4] flex items-center justify-center px-4 ">
+    <div className="min-h-screen  bg-[#FCF8F4] flex items-center justify-center ">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-8 my-10">
 
         {/* Logo */}
@@ -71,6 +120,7 @@ console.log(userData);
               type="text"
               placeholder="Enter your Full Name"
               value={name}
+              required
 onChange={(e)=>setname(e.target.value)}
               className="w-full h-11 px-4 rounded-lg border border-gray-300 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition"
             />
@@ -86,6 +136,7 @@ onChange={(e)=>setname(e.target.value)}
               type="email"
               placeholder="Enter your Email"
               value={email}
+              required
 onChange={(e)=>setemail(e.target.value)}
               className="w-full h-11 px-4 rounded-lg border border-gray-300 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition"
             />
@@ -98,12 +149,22 @@ onChange={(e)=>setemail(e.target.value)}
             </label>
 
             <input
-              type="text"
+              type="tel"
               placeholder="Enter your Mobile Number"
               value={mobile}
-onChange={(e)=>setmobile(e.target.value)}
+              required
+              maxLength={10}
+              
+onChange={(e)=>{const value = e.target.value;
+
+    if (/^\d*$/.test(value) && value.length <= 10) {
+      setmobile(value);
+    }
+  }
+}
               className="w-full h-11 px-4 rounded-lg border border-gray-300 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition"
             />
+     
           </div>
 
           {/* Password */}
@@ -118,10 +179,14 @@ onChange={(e)=>setmobile(e.target.value)}
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
+                required
+                
 onChange={(e)=>setpassword(e.target.value)}
                 className="w-full h-11 px-4 pr-11 rounded-lg border border-gray-300 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition"
               />
-
+       <p className="text-xs text-gray-500 mt-1">
+  Password must be at least 6 characters
+</p>
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -167,13 +232,17 @@ onChange={(e)=>setpassword(e.target.value)}
             className="w-full h-11 rounded-lg bg-[#FF5A36] hover:bg-[#ef4b26] text-white font-semibold transition"
             type="submit"
           >
-            Sign Up
+           {loading?<ClipLoader size={20}/>:"Sign Up"}
           </button>
-
+ {err && (
+  <p className="text-red-500 text-center ">
+    *{err}
+  </p>
+)}
           {/* Google */}
           <button
             type="button"
-            className="w-full h-11 border rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 transition"
+            className="w-full h-11 border rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 transition" onClick={signupwithgoogle}
           >
             <img
               src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -184,15 +253,15 @@ onChange={(e)=>setpassword(e.target.value)}
             Sign up with Google
           </button>
 
-          <p className="text-center text-sm text-gray-600">
+         <Link to="/signin"> <p className="text-center text-sm text-gray-600">
 
             Already have an account?
 
-            <span className="ml-1 text-[#FF5A36] cursor-pointer hover:underline">
+            <span className="ml-1 text-[#FF5A36] cursor-pointer hover:underline" >
               Sign In
             </span>
 
-          </p>
+          </p></Link>
 
         </form>
 

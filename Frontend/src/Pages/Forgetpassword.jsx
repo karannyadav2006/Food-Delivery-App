@@ -132,8 +132,13 @@ const handleResetPassword = async (e) => {
               <button
                 className="w-full bg-orange-500 text-white py-2 rounded"
               onClick={handleSendOTP}>
-                Send OTP
+                {loading?<ClipLoader size={20}/>:"Send OTP"}
               </button>
+               {err && (
+  <p className="text-red-500 text-center ">
+    *{err}
+  </p>
+)}
             </>
           )}
 
@@ -160,8 +165,13 @@ const handleResetPassword = async (e) => {
               <button
                 className="w-full bg-orange-500 text-white py-2 rounded" onClick={handleSendOTP2}
               >
-                Verify OTP
+               {loading?<ClipLoader size={20}/>:"Varify OTP"}
               </button>
+               {err && (
+  <p className="text-red-500 text-center ">
+    *{err}
+  </p>
+)}
             </>
           )}
 
@@ -200,8 +210,13 @@ const handleResetPassword = async (e) => {
               <button
                 className="w-full bg-orange-500 text-white py-2 rounded" onClick={handleResetPassword}
               >
-                Reset Password
+               {loading?<ClipLoader size={20}/>:"Reset Password"}
               </button>
+               {err && (
+  <p className="text-red-500 text-center ">
+    *{err}
+  </p>
+)}
             </>
           )}
 

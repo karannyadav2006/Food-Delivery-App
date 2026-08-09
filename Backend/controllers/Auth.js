@@ -6,7 +6,7 @@ export const signup = async (req, res) => {
     try {
         const body = req.body;
         console.log(body);
-        
+
         const isuser = await User.findOne({ email: body.email })
         if (isuser) {
             return res.status(400).json({ msg: "User is already exist" });
@@ -26,8 +26,9 @@ export const signup = async (req, res) => {
     }
     catch (err) {
         console.log(err);
+console.log(err);
 
-        res.status(500).json({ msg: "server errr" })
+        res.status(500).json({ msg: "internal server Error" })
 
     }
 
@@ -35,14 +36,15 @@ export const signup = async (req, res) => {
 //login controllers
 export const signin = async (req, res) => {
     try {
+ 
         const { email,password } = req.body;
         const user = await User.findOne({ email })
         if (!user) {
-            return res.status(400).json({ msg: "User is not found" });
+            return res.status(400).json({ msg: "Incorrect Username or Password" });
         }
         const haspassword = await bcrypt.compare(password,user.password);
         if (!haspassword) {
-            return res.status(400).json({ msg: "password not found" })
+            return res.status(400).json({ msg: "Incorrect Username or Password" })
         }
 
         const token = await gentoken(user._id);
@@ -50,12 +52,13 @@ export const signin = async (req, res) => {
             secure: false,
             maxAge: 1000 * 60 * 60 * 24
         })
-        return res.json({msg:"Login"})
+        return res.json({msg:"Login Successfully"})
     }
     catch (err) {
+        
         console.log(err);
         
-        res.status(500).json({ msg: "server errr" })
+        res.status(500).json({msg: "Internal Server Error"})
 
     }
 }
@@ -191,4 +194,59 @@ export const resetPassword = async (req, res) => {
         });
 
     }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+
+    const { fullName, email, mobile, role } = req.body;
+
+    // Check user
+    let user = await User.findOne({ email });
+  console.log("Existing User:");
+    // User doesn't exist
+    if (!user) {
+
+      user = await User.create({
+        fullName,
+        email,
+        mobile,
+        role,
+      });
+
+    }
+
+    // User exists OR newly created
+    const token = await gentoken(user._id);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24,
+    });
+
+    return res.status(200).json({
+      success: true,
+      msg: "Google authentication successful",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        mobile:user.mobile
+      },
+    });
+
+  } catch (err) {
+
+    console.log("Google Auth Error:", err);
+
+    // return res.status(500).json({
+    //   success: false,
+    //   msg: "Google authentication failed",
+    //   error: err.message,
+    // });
+
+  }
 };
